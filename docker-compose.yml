@@ -9,6 +9,8 @@ services:
       - BOT_TOKEN=${BOT_TOKEN}
     depends_on:
       - mongo
+    volumes:
+      - ./bot/src/database:/app/src/database
 
   mongo:
     image: mongo:6
