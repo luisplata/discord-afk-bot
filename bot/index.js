@@ -79,14 +79,14 @@ client.on('interactionCreate', async (interaction) => {
     if (interaction.commandName === 'afklist') {
         const guildId = interaction.guild.id;
         const guildData = await databaseFacade.get('guilds', guildId);
-    
+
         if (!guildData || !guildData.members) {
             await interaction.reply('No data found for this server.');
             return;
         }
-    
+
         const now = new Date();
-    
+
         const afkList = guildData.members
             .filter(member => member.lastMessageAt) // ⬅️ Aquí filtramos solo los que tienen datos
             .map(member => {
@@ -95,44 +95,84 @@ client.on('interactionCreate', async (interaction) => {
                 const mins = Math.floor(diffMs / 60000) % 60;
                 const hours = Math.floor(diffMs / 3600000) % 24;
                 const days = Math.floor(diffMs / 86400000);
-    
+
                 return `🧍 ${member.tag} — ${days}d ${hours}h ${mins}m AFK`;
             });
-    
+
         if (afkList.length === 0) {
             await interaction.reply('Ningún miembro tiene actividad registrada aún.');
             return;
         }
-    
+
         const chunks = splitIntoChunks(afkList, 15);
         for (const chunk of chunks) {
             await interaction.reply({ content: chunk, ephemeral: false });
         }
     }
-    
-});
 
-// Update last message time when a message is sent
+});
+async function updateLastActivity({ userId, userTag, guild, type }) {
+    const guildId = guild?.id;
+
+    // Primero actualizamos en la base de datos por guild si aplica
+    if (guildId) {
+        const guildData = await databaseFacade.get('guilds', guildId);
+        if (!guildData) return;
+
+        const members = guildData.members || [];
+        const memberIndex = members.findIndex(m => m.id === userId);
+
+        if (memberIndex !== -1) {
+            members[memberIndex].lastMessageAt = new Date().toISOString();
+            await databaseFacade.update('guilds', guildId, { members });
+            console.log(`🕒 [${type}] Last activity updated for ${userTag} in ${guild.name}`);
+        } else {
+            console.warn(`⚠️ [${type}] User ${userTag} not found in guild ${guild.name}`);
+        }
+    }
+
+    // También actualizamos en la colección general de usuarios
+    await User.updateOne(
+        { discordId: userId },
+        { $set: { lastActivity: new Date() } },
+        { upsert: true }
+    );
+}
+
+// Mensajes
 client.on('messageCreate', async (message) => {
     if (message.author.bot || !message.guild) return;
 
-    const { author, guild } = message;
-    const guildId = guild.id;
-    const userId = author.id;
+    await updateLastActivity({
+        userId: message.author.id,
+        userTag: message.author.tag,
+        guild: message.guild,
+        type: 'message'
+    });
+});
 
-    const guildData = await databaseFacade.get('guilds', guildId);
-    if (!guildData) return;
+// Reacciones
+client.on('messageReactionAdd', async (reaction, user) => {
+    if (user.bot || !reaction.message.guild) return;
 
-    const members = guildData.members || [];
-    const memberIndex = members.findIndex(m => m.id === userId);
+    await updateLastActivity({
+        userId: user.id,
+        userTag: user.tag,
+        guild: reaction.message.guild,
+        type: 'reaction'
+    });
+});
 
-    if (memberIndex !== -1) {
-        members[memberIndex].lastMessageAt = new Date().toISOString();
-        await databaseFacade.update('guilds', guildId, { members });
-        console.log(`🕒 Last activity updated for ${members[memberIndex].tag} in ${guild.name}`);
-    } else {
-        console.warn(`⚠️ User ${author.tag} not found in the guild ${guild.name}`);
-    }
+// Slash commands, botones, select menus
+client.on('interactionCreate', async (interaction) => {
+    if (interaction.user?.bot || !interaction.guild) return;
+
+    await updateLastActivity({
+        userId: interaction.user.id,
+        userTag: interaction.user.tag,
+        guild: interaction.guild,
+        type: 'interaction'
+    });
 });
 
 // Add new member to the guild
