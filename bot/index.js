@@ -384,7 +384,7 @@ async function checkInactiveUsers(guild, first_line, second_line, third_line, la
 
         if (diffInDays >= last_line && !user.isOwner) {
             try {
-                await member.kick('Expulsado por inactividad prolongada');
+                //await member.kick('Expulsado por inactividad prolongada');
                 const logsChannel = guild.channels.cache.get(chanel_log);
                 if (logsChannel) {
                     logsChannel.send({
