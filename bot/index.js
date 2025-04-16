@@ -79,30 +79,37 @@ client.on('interactionCreate', async (interaction) => {
     if (interaction.commandName === 'afklist') {
         const guildId = interaction.guild.id;
         const guildData = await databaseFacade.get('guilds', guildId);
-
+    
         if (!guildData || !guildData.members) {
             await interaction.reply('No data found for this server.');
             return;
         }
-
+    
         const now = new Date();
-        const afkList = guildData.members.map(member => {
-            if (!member.lastMessageAt) return `🕳️ ${member.tag} — Never sent a message`;
-
-            const last = new Date(member.lastMessageAt);
-            const diffMs = now - last;
-            const mins = Math.floor(diffMs / 60000) % 60;
-            const hours = Math.floor(diffMs / 3600000) % 24;
-            const days = Math.floor(diffMs / 86400000);
-
-            return `🧍 ${member.tag} — ${days}d ${hours}h ${mins}m AFK`;
-        });
-
+    
+        const afkList = guildData.members
+            .filter(member => member.lastMessageAt) // ⬅️ Aquí filtramos solo los que tienen datos
+            .map(member => {
+                const last = new Date(member.lastMessageAt);
+                const diffMs = now - last;
+                const mins = Math.floor(diffMs / 60000) % 60;
+                const hours = Math.floor(diffMs / 3600000) % 24;
+                const days = Math.floor(diffMs / 86400000);
+    
+                return `🧍 ${member.tag} — ${days}d ${hours}h ${mins}m AFK`;
+            });
+    
+        if (afkList.length === 0) {
+            await interaction.reply('Ningún miembro tiene actividad registrada aún.');
+            return;
+        }
+    
         const chunks = splitIntoChunks(afkList, 15);
         for (const chunk of chunks) {
             await interaction.reply({ content: chunk, ephemeral: false });
         }
     }
+    
 });
 
 // Update last message time when a message is sent
