@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  bot:
+    build: ./bot
+    container_name: discord-afk-bot
+    restart: always
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:6
+    container_name: mongo-afk
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./mongo-data:/data/db
