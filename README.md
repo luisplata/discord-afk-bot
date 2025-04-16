@@ -29,4 +29,4 @@ This project is licensed under the [License Name] - see the [LICENSE](LICENSE) f
 
 **Contact:**
 
-If you have any questions or suggestions, feel free to reach out to us at [your_email@example.com] or open an issue in the repository.
+If you have any questions or suggestions, feel free to reach out to us at [www.luisplata@gmail.com] or open an issue in the repository.
