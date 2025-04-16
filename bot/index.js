@@ -163,6 +163,22 @@ client.on('guildMemberRemove', async (member) => {
     console.log(`❌ Member removed: ${member.user.tag} from ${member.guild.name}`);
 });
 
+client.on('guildCreate', async (guild) => {
+    console.log(`📥 Bot added to new server: ${guild.name} (ID: ${guild.id})`);
+
+    // Realiza la configuración inicial exactamente igual que en el "ready"
+    const returnData = await checkServers(guild, "AFK", "Bellgilante", "Bellgilante-log");
+    console.log(`✅ Server initialized: ${guild.name} - Role: ${returnData.Rol.name} - Category: ${returnData.Category.name} - Channel: ${returnData.Channel.name}`);
+
+    returnData.members = await getGuildMembersInfo(guild);
+    returnData.name = guild.name;
+    returnData.id = guild.id;
+
+    await applyCategoryPermissions(guild, returnData.Rol.id, returnData.Category.id);
+    await saveGuildInfo(returnData);
+});
+
+
 // Function to retrieve the AFK time of a user
 function getAfkTime(lastMessageAt) {
     if (!lastMessageAt) return null;
