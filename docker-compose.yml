@@ -7,8 +7,8 @@ services:
     restart: always
     environment:
       - BOT_TOKEN=${BOT_TOKEN}
-    depends_on:
-      - mongo
+    # depends_on:
+    #   - mongo
     volumes:
       - ./bot/src/database:/app/src/database
 
