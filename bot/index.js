@@ -130,13 +130,6 @@ async function updateLastActivity({ userId, userTag, guild, type }) {
             console.warn(`⚠️ [${type}] User ${userTag} not found in guild ${guild.name}`);
         }
     }
-
-    // También actualizamos en la colección general de usuarios
-    await User.updateOne(
-        { discordId: userId },
-        { $set: { lastActivity: new Date() } },
-        { upsert: true }
-    );
 }
 
 // Mensajes
